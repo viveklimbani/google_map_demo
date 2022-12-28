@@ -1,11 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:location/location.dart';
 import 'package:geocode/geocode.dart';
 import 'package:http/http.dart' as http;
-
-import '../common/utils/constants.dart';
+import 'package:practice_app/common/utils/constants.dart';
 
 class DetectCurrentLocation with ChangeNotifier {
   Location location = Location();
@@ -32,7 +31,11 @@ class DetectCurrentLocation with ChangeNotifier {
       }
     }
 
-    locationData = await location.getLocation().catchError((onError) {});
+    locationData = await location.getLocation().catchError((onError) {
+      if (kDebugMode) {
+        print("Location error $onError");
+      }
+    });
     notifyListeners();
     return locationData;
   }
@@ -85,11 +88,16 @@ getAddressFromLatLng(
     if (response.statusCode == 200) {
       Map data = jsonDecode(response.body);
       String formattedAddress = data["results"][0]["formatted_address"];
+      if (kDebugMode) {
+        print("response ==== $formattedAddress");
+      }
       return formattedAddress;
-    } else
+    } else {
       return null;
-  } else
+    }
+  } else {
     return null;
+  }
 }
 
 class CustomAddress {

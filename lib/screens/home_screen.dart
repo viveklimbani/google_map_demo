@@ -1,123 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
-import 'package:location/location.dart';
-import 'package:practice_app/location/current_location_screen.dart';
+import 'package:practice_app/common/utils/common_functions.dart';
+import 'package:practice_app/common/utils/constants.dart';
+import 'package:practice_app/data/selected_address_location.dart';
+import 'package:practice_app/screens/detect_current_location.dart';
 import 'package:practice_app/provider/location_provider.dart';
+import 'package:provider/provider.dart';
 
-import 'common/resources/images.dart';
-import 'common/utils/common_functions.dart';
-import 'common/utils/constants.dart';
-import 'common/utils/dimen.dart';
-import 'data/selected_address_location.dart';
-import 'location/detect_current_location.dart';
+import '../common/resources/images.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   final pickupAddressController = TextEditingController();
-  TextEditingController searchEditingController = TextEditingController();
+
   SelectedAddressLocation _selectedAddressLocation = SelectedAddressLocation();
   DetectCurrentLocation _detectCurrentLocation = DetectCurrentLocation();
-  late GoogleMapController mapController;
-  String? _mapStyle;
-  Location currentLocation = Location();
-  String googleApikey = GOOGLE_MAPS_API_KEY;
-  String searchLocation = "Search Location";
-  final Set<Marker> _markers = {};
 
+  ///Provider
   late LocationProvider locationData;
 
   CameraPosition _initialLocation =
-      CameraPosition(target: LatLng(0, 0), zoom: 14);
+      CameraPosition(target: LatLng(23.0225, 72.5714), zoom: 14);
 
-  // void getLocation() async {
-  //   var location = await currentLocation.getLocation();
-  //   currentLocation.onLocationChanged.listen((LocationData loc) {
-  //     mapController
-  //         ?.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-  //       target: LatLng(loc.latitude ?? 0.0, loc.longitude ?? 0.0),
-  //       zoom: 12.0,
-  //     )));
-  //     print(loc.latitude);
-  //     print(loc.longitude);
-  //     setState(() {
-  //       _markers.add(Marker(
-  //           markerId: const MarkerId('Home'),
-  //           position: LatLng(loc.latitude ?? 0.0, loc.longitude ?? 0.0)));
-  //     });
-  //   });
-  // }
-
-  @override
-  void initState() {
-    super.initState();
-    // setState(() {
-    //   getLocation();
-    // });
-    rootBundle.loadString('assets/style/map_style.txt').then((string) {
-      _mapStyle = string;
-    });
-  }
-
-  static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(23.0673, 72.5567),
-    zoom: 14.4746,
-  );
-
+  late GoogleMapController mapController;
   @override
   Widget build(BuildContext context) {
+    locationData = Provider.of<LocationProvider>(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Map"),
-      ),
+      appBar: AppBar(title: const Text("Google Map")),
       body: mainLayout,
-
-      // Stack(
-      //   children: [
-      //     googleMap,
-      //     centerMarker,
-      //     // Container(
-      //     //   height: MediaQuery.of(context).size.height,
-      //     //   width: MediaQuery.of(context).size.width,
-      //     //   child: GoogleMap(
-      //     //     zoomControlsEnabled: false,
-      //     //     initialCameraPosition: const CameraPosition(
-      //     //       target: LatLng(48.8561, 2.2930),
-      //     //       zoom: 12.0,
-      //     //     ),
-      //     //     onMapCreated: (GoogleMapController controller) {
-      //     //       mapController = controller;
-      //     //     },
-      //     //     markers: _markers,
-      //     //   ),
-      //     // ),
-      //     bottomDetailsSheet,
-      //   ],
-      // ),
-      // floatingActionButton: FloatingActionButton(
-      //   child: const Icon(
-      //     Icons.location_searching,
-      //     color: Colors.white,
-      //   ),
-      //   onPressed: () => onDetectLocationClick(context),
-      //   // onPressed: () {
-      //   //   getLocation();
-      //   // },
-      // ),
     );
   }
 
   get mainLayout => Stack(
         children: [
-          Container(
+          SizedBox(
             height: MediaQuery.of(context).viewInsets.bottom > 0.0 ? 200 : 400,
             child: Stack(
               children: [
@@ -139,11 +61,10 @@ class _HomeScreenState extends State<HomeScreen> {
         zoomControlsEnabled: false,
         onMapCreated: (GoogleMapController controller) {
           mapController = controller;
-          mapController?.animateCamera(
+          mapController.animateCamera(
             CameraUpdate.newCameraPosition(
-              CameraPosition(
-                target: LatLng(selectedAddressLocation.lat ?? 0,
-                    selectedAddressLocation.lng ?? 0),
+              const CameraPosition(
+                target: LatLng(23.0225, 72.5714),
                 zoom: 15.0,
               ),
             ),
@@ -157,27 +78,13 @@ class _HomeScreenState extends State<HomeScreen> {
   get centerMarker => Center(
         child: Container(
           height: 50,
-          margin: const EdgeInsets.only(bottom: 48),
+          margin: EdgeInsets.only(bottom: 48),
           child: Image.asset(
             Images.icMarker,
             color: Colors.black,
           ),
         ),
       );
-
-  // get getSearchBox => Padding(
-  //       padding: const EdgeInsets.symmetric(
-  //         horizontal: Spacing.space10,
-  //         vertical: Spacing.space10,
-  //       ),
-  //       child: TextFieldSearchCustom(
-  //         hintText: "Search Location",
-  //         onChangeField: (value) {
-  //           // filterSearchResults(value);
-  //         },
-  //         controller: searchEditingController,
-  //       ),
-  //     );
 
   get bottomDetailsSheet => DraggableScrollableSheet(
         initialChildSize: .55,
@@ -194,14 +101,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 12,
                 ),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
                     "Select Location",
-                    style: TextStyle(fontSize: 12),
                   ),
                 ),
                 const SizedBox(
-                  height: 20,
+                  height: 12,
                 ),
                 googleAutoFillTextField,
                 const SizedBox(
@@ -209,48 +115,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 useCurrentLocationBtn,
                 const Divider(),
+                const SizedBox(
+                  height: 20,
+                ),
               ],
             ),
           );
         },
       );
 
-  onDetectLocationClick() async {
-    dismissKeyboard(context);
-    var address = await _detectCurrentLocation.getCurrentAddress();
-
-    setState(() {
-      if (address != null) {
-
-        if (address.latitude != null || address.longitude != null) {
-          mapController?.animateCamera(
-            CameraUpdate.newCameraPosition(
-              CameraPosition(
-                target: LatLng(address.latitude ?? 0, address.longitude ?? 0),
-                zoom: 18.0,
-              ),
-            ),
-          );
-        }
-
-        selectedAddressLocation.lat = address.latitude;
-        selectedAddressLocation.lng = address.longitude;
-        selectedAddressLocation.address1 = address.address;
-        selectedAddressLocation.address2 = address.address;
-      }
-    });
-
-    // onUseLocationClick();
-  }
-
-  onUseLocationClick(){
-    Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const CurrentLocationScreen()));
-  }
-
   get googleAutoFillTextField => Container(
         height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: GooglePlaceAutoCompleteTextField(
           textEditingController: pickupAddressController,
           googleAPIKey: GOOGLE_MAPS_API_KEY,
@@ -260,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _selectedAddressLocation.lng = double.parse(detail.lng!);
 
             setState(() {
-              mapController?.animateCamera(
+              mapController.animateCamera(
                 CameraUpdate.newCameraPosition(
                   CameraPosition(
                     target: LatLng(double.parse(detail.lat ?? "0"),
@@ -271,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             });
 
+            // BotToast.closeAllLoading();
           },
           itmClick: (detail) {
             dismissKeyboard(context);
@@ -285,8 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: Colors.black),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: Spacing.xxSmall),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -299,11 +175,8 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 10,
               width: 10,
               child: const Padding(
-                padding: EdgeInsets.all(Spacing.xSmall11),
-                child: Icon(
-                  Icons.search,
-                  size: 10,
-                ),
+                padding: EdgeInsets.all(11.0),
+                child: Icon(Icons.search),
               ),
             ),
             filled: true,
@@ -318,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
   get useCurrentLocationBtn => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: InkWell(
           onTap: () => onDetectLocationClick(),
           child: Row(
@@ -334,8 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Use Current Locations",
-                    style: TextStyle(fontSize: 12),
+                    "Use Current Location",
                   ),
                   selectedAddressLocation.address2 != null
                       ? Container(
@@ -348,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             softWrap: false,
                           ),
                         )
-                      : const SizedBox()
+                      : SizedBox()
                 ],
               ),
               const Spacer(),
@@ -360,4 +232,28 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       );
+
+  onDetectLocationClick() async {
+    dismissKeyboard(context);
+    var address = await _detectCurrentLocation.getCurrentAddress();
+
+    setState(() {
+      if (address != null) {
+        if (address.latitude != null || address.longitude != null)
+          mapController.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: LatLng(address.latitude ?? 0, address.longitude ?? 0),
+                zoom: 18.0,
+              ),
+            ),
+          );
+
+        selectedAddressLocation.lat = address.latitude;
+        selectedAddressLocation.lng = address.longitude;
+        selectedAddressLocation.address1 = address.address;
+        selectedAddressLocation.address2 = address.address;
+      }
+    });
+  }
 }
